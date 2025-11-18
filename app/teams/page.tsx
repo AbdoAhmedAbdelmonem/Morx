@@ -70,11 +70,26 @@ export default function TeamsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState<Task["status"] | "all">("all")
 
+  // Safe localStorage wrapper
+  const safeLocalStorage = {
+    getItem: (key: string) => {
+      if (typeof window !== "undefined") {
+        return localStorage.getItem(key)
+      }
+      return null
+    },
+    setItem: (key: string, value: string) => {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(key, value)
+      }
+    }
+  }
+
   useEffect(() => {
-    const storedTeams = localStorage.getItem("morx-teams")
+    const storedTeams = safeLocalStorage.getItem("morx-teams")
     if (storedTeams) setTeams(JSON.parse(storedTeams))
 
-    const storedTasks = localStorage.getItem("morx-tasks")
+    const storedTasks = safeLocalStorage.getItem("morx-tasks")
     if (storedTasks) setTasks(JSON.parse(storedTasks))
   }, [])
 
@@ -95,7 +110,7 @@ export default function TeamsPage() {
 
     const updated = [...teams, newTeam]
     setTeams(updated)
-    localStorage.setItem("morx-teams", JSON.stringify(updated))
+    safeLocalStorage.setItem("morx-teams", JSON.stringify(updated))
     
     setNewTeamName("")
     setNewTeamDesc("")
@@ -124,7 +139,7 @@ export default function TeamsPage() {
 
     const updated = teams.map(t => t.id === team.id ? updatedTeam : t)
     setTeams(updated)
-    localStorage.setItem("morx-teams", JSON.stringify(updated))
+    safeLocalStorage.setItem("morx-teams", JSON.stringify(updated))
     
     setJoinCode("")
     setJoinDialogOpen(false)
@@ -136,11 +151,11 @@ export default function TeamsPage() {
 
     const updated = teams.filter(t => t.id !== teamId)
     setTeams(updated)
-    localStorage.setItem("morx-teams", JSON.stringify(updated))
+    safeLocalStorage.setItem("morx-teams", JSON.stringify(updated))
 
     const updatedTasks = tasks.filter(t => t.teamId !== teamId)
     setTasks(updatedTasks)
-    localStorage.setItem("morx-tasks", JSON.stringify(updatedTasks))
+    safeLocalStorage.setItem("morx-tasks", JSON.stringify(updatedTasks))
 
     if (selectedTeam === teamId) setSelectedTeam(null)
   }
@@ -161,7 +176,7 @@ export default function TeamsPage() {
 
     const updated = [...tasks, newTask]
     setTasks(updated)
-    localStorage.setItem("morx-tasks", JSON.stringify(updated))
+    safeLocalStorage.setItem("morx-tasks", JSON.stringify(updated))
     
     setNewTaskTitle("")
     setNewTaskDesc("")
@@ -171,20 +186,20 @@ export default function TeamsPage() {
   const updateTaskStatus = (taskId: string, status: Task["status"]) => {
     const updated = tasks.map(t => t.id === taskId ? { ...t, status } : t)
     setTasks(updated)
-    localStorage.setItem("morx-tasks", JSON.stringify(updated))
+    safeLocalStorage.setItem("morx-tasks", JSON.stringify(updated))
   }
 
   const assignTask = (taskId: string, username: string | null) => {
     const updated = tasks.map(t => t.id === taskId ? { ...t, assignedTo: username } : t)
     setTasks(updated)
-    localStorage.setItem("morx-tasks", JSON.stringify(updated))
+    safeLocalStorage.setItem("morx-tasks", JSON.stringify(updated))
   }
 
   const deleteTask = (taskId: string) => {
     if (!confirm("Delete this task?")) return
     const updated = tasks.filter(t => t.id !== taskId)
     setTasks(updated)
-    localStorage.setItem("morx-tasks", JSON.stringify(updated))
+    safeLocalStorage.setItem("morx-tasks", JSON.stringify(updated))
   }
 
   const handleAiMessage = () => {
