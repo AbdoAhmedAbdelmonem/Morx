@@ -117,9 +117,24 @@ export default function SettingsPage() {
     animationsEnabled: true
   })
 
+  // Safe localStorage wrapper
+  const safeLocalStorage = {
+    getItem: (key: string) => {
+      if (typeof window !== "undefined") {
+        return localStorage.getItem(key)
+      }
+      return null
+    },
+    setItem: (key: string, value: string) => {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(key, value)
+      }
+    }
+  }
+
   useEffect(() => {
     // Load preferences from localStorage
-    const stored = localStorage.getItem("morx-preferences")
+    const stored = safeLocalStorage.getItem("morx-preferences")
     if (stored) {
       setPreferences(JSON.parse(stored))
     }
@@ -147,14 +162,14 @@ export default function SettingsPage() {
 
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault()
-    localStorage.setItem("morx-profile", JSON.stringify(profile))
+    safeLocalStorage.setItem("morx-profile", JSON.stringify(profile))
     console.log("Profile updated:", profile)
   }
 
   const handlePreferenceChange = (key: string, value: any) => {
     const updated = { ...preferences, [key]: value }
     setPreferences(updated)
-    localStorage.setItem("morx-preferences", JSON.stringify(updated))
+    safeLocalStorage.setItem("morx-preferences", JSON.stringify(updated))
   }
 
   const themeOptions = [
