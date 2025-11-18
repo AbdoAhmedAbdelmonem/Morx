@@ -21,9 +21,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
+  // Safe localStorage wrapper
+  const safeLocalStorage = {
+    getItem: (key: string) => {
+      if (typeof window !== "undefined") {
+        return localStorage.getItem(key)
+      }
+      return null
+    },
+    setItem: (key: string, value: string) => {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(key, value)
+      }
+    },
+    removeItem: (key: string) => {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(key)
+      }
+    }
+  }
+
   useEffect(() => {
     // Check if user is logged in from localStorage
-    const storedUser = localStorage.getItem("morx-user")
+    const storedUser = safeLocalStorage.getItem("morx-user")
     if (storedUser) {
       setUser(JSON.parse(storedUser))
     }
@@ -39,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: "Founder"
       }
       setUser(userData)
-      localStorage.setItem("morx-user", JSON.stringify(userData))
+      safeLocalStorage.setItem("morx-user", JSON.stringify(userData))
       return true
     }
     return false
@@ -47,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem("morx-user")
+    safeLocalStorage.removeItem("morx-user")
   }
 
   return (
