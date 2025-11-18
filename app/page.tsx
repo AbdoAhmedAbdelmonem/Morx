@@ -404,7 +404,7 @@ export default function LandingPage() {
               {[
                 {
                   quote:
-                    "SaaSify has transformed how we manage our projects. The automation features have saved us countless hours of manual work.",
+                    "Morx has transformed how we manage our projects. The automation features have saved us countless hours of manual work.",
                   author: "Sarah Johnson",
                   role: "Project Manager, TechCorp",
                   rating: 5,
@@ -425,7 +425,7 @@ export default function LandingPage() {
                 },
                 {
                   quote:
-                    "We've tried several similar solutions, but none compare to the ease of use and comprehensive features of SaaSify. It's been a game-changer.",
+                    "We've tried several similar solutions, but none compare to the ease of use and comprehensive features of Morx. It's been a game-changer.",
                   author: "David Kim",
                   role: "CEO, InnovateNow",
                   rating: 5,
@@ -439,7 +439,7 @@ export default function LandingPage() {
                 },
                 {
                   quote:
-                    "Implementation was seamless, and the ROI was almost immediate. We've reduced our operational costs by 30% since switching to SaaSify.",
+                    "Implementation was seamless, and the ROI was almost immediate. We've reduced our operational costs by 30% since switching to Morx.",
                   author: "James Wilson",
                   role: "COO, ScaleUp Inc",
                   rating: 5,
