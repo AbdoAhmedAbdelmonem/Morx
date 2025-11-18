@@ -44,7 +44,12 @@ export function ColorThemeProvider({
   ...props
 }: ColorThemeProviderProps) {
   const [colorTheme, setColorTheme] = useState<ColorTheme>(
-    () => (localStorage.getItem(storageKey) as ColorTheme) || defaultTheme
+    () => {
+      if (typeof window !== "undefined") {
+        return (localStorage.getItem(storageKey) as ColorTheme) || defaultTheme
+      }
+      return defaultTheme
+    }
   )
 
   useEffect(() => {
@@ -77,7 +82,9 @@ export function ColorThemeProvider({
   const value = {
     colorTheme,
     setColorTheme: (theme: ColorTheme) => {
-      localStorage.setItem(storageKey, theme)
+      if (typeof window !== "undefined") {
+        localStorage.setItem(storageKey, theme)
+      }
       setColorTheme(theme)
     },
   }
