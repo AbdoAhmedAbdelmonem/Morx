@@ -137,4 +137,4 @@
    - Ensure data consistency
    - Performance testing
 
-This priority-based approach ensures you build the core functionality first and add advanced features progressively, reducing risk and ensuring you have a working MVP at each stage.
+This priority-based approach ensures building the core functionality first and add advanced features progressively, reducing risk and ensuring you have a working MVP at each stage.
