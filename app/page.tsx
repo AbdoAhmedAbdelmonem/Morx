@@ -98,6 +98,9 @@ export default function LandingPage() {
                 Advanced reports and statistics platform that helps teams make data-driven decisions.
                 Streamline your analytics and focus on what matters most.
               </p>
+              <p className="text-sm text-muted-foreground/70 font-mono mb-4">
+                Crafted by <span className="text-primary font-semibold">Undefined</span> development team
+              </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" className="rounded-full h-12 px-8 text-base">
                   Start Free Trial
@@ -294,6 +297,9 @@ export default function LandingPage() {
               <p className="max-w-[800px] text-muted-foreground md:text-lg">
                 Our comprehensive platform provides all the tools you need to streamline your workflow, boost
                 productivity, and achieve your goals.
+              </p>
+              <p className="text-xs font-mono text-muted-foreground/60 mt-2">
+                // Built with ❤️ by <span className="text-primary">Undefined</span>
               </p>
             </motion.div>
 
@@ -497,6 +503,9 @@ export default function LandingPage() {
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Simple, Transparent Pricing</h2>
               <p className="max-w-[800px] text-muted-foreground md:text-lg">
                 Choose the plan that's right for your business. All plans include a 14-day free trial.
+              </p>
+              <p className="text-xs font-mono text-muted-foreground/60 mt-2">
+                <code className="bg-muted px-2 py-1 rounded">dev_team: "Undefined"</code>
               </p>
             </motion.div>
 
@@ -788,6 +797,9 @@ export default function LandingPage() {
               </div>
               <p className="text-sm text-primary-foreground/80 mt-4">
                 No credit card required. 14-day free trial. Cancel anytime.
+              </p>
+              <p className="text-xs font-mono text-primary-foreground/60 mt-3">
+                console.log("Developed by <span className="font-bold">Undefined</span> team");
               </p>
             </motion.div>
           </div>
