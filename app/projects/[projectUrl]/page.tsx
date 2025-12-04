@@ -1433,7 +1433,7 @@ export default function ProjectPage() {
                                       <Download className="size-3" />
                                     </a>
                                   </Button>
-                                  {file.user_id === user?.user_id && (
+                                  {(file.user_id === user?.user_id || user?.user_id === project?.team_owner_id) && (
                                     <Button
                                       variant="ghost"
                                       size="icon"
