@@ -134,6 +134,9 @@ export default function ProjectPage() {
       const result = await res.json()
       
       if (res.ok) {
+        console.log('Project data received:', result)
+        console.log('team_owner_id:', result.team_owner_id)
+        console.log('Current user_id:', user?.user_id)
         setProject(result)
       } else {
         // Set project with error flag for unauthorized access
@@ -1303,7 +1306,7 @@ export default function ProjectPage() {
                                         {new Date(comment.created_at).toLocaleString()}
                                       </p>
                                     </div>
-                                    {comment.user_id === user?.user_id && (
+                                    {(comment.user_id === user?.user_id || user?.user_id === project?.team_owner_id) && (
                                       <Button
                                         variant="ghost"
                                         size="icon"
