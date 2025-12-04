@@ -210,7 +210,7 @@ export default function ProjectPage() {
           project_id: project.project_id,
           due_date: newTaskDueDate || null,
           priority: parseInt(newTaskPriority),
-          assigned_user_id: selectedAssignees[0] || null,  // First selected assignee
+          assigned_user_ids: selectedAssignees,  // Send array of assignees
           status: 0
         })
       })
@@ -312,10 +312,37 @@ export default function ProjectPage() {
   const handleUpdateTask = async () => {
     if (!editingTask || !newTaskTitle.trim() || !user?.user_id) return
     
-    // TODO: Implement full task update endpoint in Express backend
-    alert('Task edit feature coming soon. Use status change for now.')
-    setIsEditDialogOpen(false)
-    setEditingTask(null)
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.TASKS.UPDATE(editingTask.task_id)}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          title: newTaskTitle,
+          description: newTaskDesc,
+          due_date: newTaskDueDate || null,
+          priority: parseInt(newTaskPriority),
+          assigned_user_ids: selectedAssignees
+        })
+      })
+      
+      const result = await res.json()
+      
+      if (res.ok) {
+        setIsEditDialogOpen(false)
+        setEditingTask(null)
+        setNewTaskTitle('')
+        setNewTaskDesc('')
+        setNewTaskDueDate('')
+        setNewTaskPriority('1')
+        setSelectedAssignees([])
+        fetchTasks()
+      } else {
+        alert(result.error || 'Failed to update task')
+      }
+    } catch (error) {
+      console.error('Error updating task:', error)
+      alert('An error occurred. Please try again.')
+    }
   }
 
   const handleAddMember = async () => {
