@@ -94,6 +94,12 @@ export default function ProjectPage() {
   const [isLoadingFiles, setIsLoadingFiles] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
 
+  // Delete task dialog state
+  const [isDeleteTaskDialogOpen, setIsDeleteTaskDialogOpen] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState<{ id: number; title: string } | null>(null)
+  const [deleteTaskConfirmText, setDeleteTaskConfirmText] = useState("")
+  const [deleteTaskCheckbox, setDeleteTaskCheckbox] = useState(false)
+
   useEffect(() => {
     const storedSession = localStorage.getItem('student_session')
     if (storedSession) {
@@ -250,10 +256,36 @@ export default function ProjectPage() {
 
   const handleDeleteTask = async (taskId: number, taskTitle: string) => {
     if (!user?.user_id) return
-    if (!confirm(`Delete "${taskTitle}"?`)) return
+    // Open the delete confirmation dialog
+    setTaskToDelete({ id: taskId, title: taskTitle })
+    setDeleteTaskConfirmText("")
+    setDeleteTaskCheckbox(false)
+    setIsDeleteTaskDialogOpen(true)
+  }
+
+  const confirmDeleteTask = async () => {
+    if (!taskToDelete || !user?.user_id) return
+    if (deleteTaskConfirmText !== "delete task" || !deleteTaskCheckbox) return
     
-    // TODO: Implement delete task endpoint in Express backend
-    alert('Delete task feature coming soon')
+    try {
+      const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.TASKS.DELETE(taskToDelete.id)}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      })
+      
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete task')
+      }
+      
+      // Remove the task from state
+      setTasks(prev => prev.filter(t => t.task_id !== taskToDelete.id))
+      setIsDeleteTaskDialogOpen(false)
+      setTaskToDelete(null)
+    } catch (error) {
+      console.error('Error deleting task:', error)
+      alert(error instanceof Error ? error.message : 'Failed to delete task')
+    }
   }
 
   const handleEditTask = (task: Task) => {
@@ -1440,6 +1472,59 @@ export default function ProjectPage() {
                   disabled={!editProjectName?.trim()}
                 >
                   Save Changes
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete Task Confirmation Dialog */}
+          <Dialog open={isDeleteTaskDialogOpen} onOpenChange={setIsDeleteTaskDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="text-red-600">Delete Task</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete <span className="font-semibold">"{taskToDelete?.title}"</span>? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="delete-task-confirm">
+                    Type <span className="font-mono font-bold">delete task</span> to confirm
+                  </Label>
+                  <Input
+                    id="delete-task-confirm"
+                    placeholder="delete task"
+                    value={deleteTaskConfirmText}
+                    onChange={(e) => setDeleteTaskConfirmText(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="delete-task-checkbox"
+                    checked={deleteTaskCheckbox}
+                    onCheckedChange={(checked) => setDeleteTaskCheckbox(checked === true)}
+                  />
+                  <Label htmlFor="delete-task-checkbox" className="text-sm text-muted-foreground">
+                    I understand this will permanently delete the task and all its comments
+                  </Label>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsDeleteTaskDialogOpen(false)
+                    setTaskToDelete(null)
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={confirmDeleteTask}
+                  disabled={deleteTaskConfirmText !== "delete task" || !deleteTaskCheckbox}
+                >
+                  Delete Task
                 </Button>
               </DialogFooter>
             </DialogContent>
