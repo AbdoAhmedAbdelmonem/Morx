@@ -1403,10 +1403,13 @@ export default function ProjectPage() {
                           <Plus className="mr-1 size-3" />
                           {uploadingFile ? 'Uploading...' : 'Upload File'}
                         </Button>
+                        <p className="text-[10px] text-muted-foreground mt-1 text-center">
+                          Max 16MB • PDF, Images, Docs, ZIP
+                        </p>
                       </div>
 
                       {/* Files List */}
-                      <ScrollArea className="h-[200px]">
+                      <div className="h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-1">
                         {isLoadingFiles ? (
                           <div className="text-center py-4 text-sm text-muted-foreground">Loading files...</div>
                         ) : files.length === 0 ? (
@@ -1414,11 +1417,11 @@ export default function ProjectPage() {
                         ) : (
                           <div className="space-y-2">
                             {files.map((file) => (
-                              <div key={file.file_id} className="flex items-center gap-2 p-2 rounded-lg border bg-card text-xs">
-                                <Paperclip className="size-3 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate">{file.file_name}</p>
-                                  <p className="text-muted-foreground">
+                              <div key={file.file_id} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 p-2 rounded-lg border bg-card text-xs">
+                                <Paperclip className="size-3" />
+                                <div className="overflow-hidden">
+                                  <p className="font-medium truncate" title={file.file_name}>{file.file_name}</p>
+                                  <p className="text-muted-foreground truncate">
                                     {formatFileSize(file.file_size)} • {file.first_name} {file.last_name}
                                   </p>
                                 </div>
@@ -1448,7 +1451,7 @@ export default function ProjectPage() {
                             ))}
                           </div>
                         )}
-                      </ScrollArea>
+                      </div>
                     </div>
                   </div>
                 </div>
