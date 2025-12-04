@@ -1363,7 +1363,7 @@ export default function ProjectPage() {
                           <p className="text-sm text-muted-foreground">No one assigned</p>
                         )}
                       </div>
-                      {(project?.role === 'owner' || project?.role === 'admin') && (
+                      {user?.user_id === project?.team_owner_id && (
                         <Button size="sm" variant="outline" className="w-full mt-2" onClick={() => handleEditTask(selectedTask!)}>
                           <User className="mr-1 size-3" />
                           Assign Members
@@ -1575,7 +1575,7 @@ export default function ProjectPage() {
                     onDelete={handleDeleteTask}
                     onEdit={handleEditTask}
                     onOpenDetails={openTaskDetails}
-                    userRole={project.role}
+                    isOwner={user?.user_id === project?.team_owner_id}
                     getDaysDiff={getDaysDiff}
                     getPriorityColor={getPriorityColor}
                     getPriorityLabel={getPriorityLabel}
@@ -1605,7 +1605,7 @@ export default function ProjectPage() {
                     onDelete={handleDeleteTask}
                     onEdit={handleEditTask}
                     onOpenDetails={openTaskDetails}
-                    userRole={project.role}
+                    isOwner={user?.user_id === project?.team_owner_id}
                     getDaysDiff={getDaysDiff}
                     getPriorityColor={getPriorityColor}
                     getPriorityLabel={getPriorityLabel}
@@ -1635,7 +1635,7 @@ export default function ProjectPage() {
                     onDelete={handleDeleteTask}
                     onEdit={handleEditTask}
                     onOpenDetails={openTaskDetails}
-                    userRole={project.role}
+                    isOwner={user?.user_id === project?.team_owner_id}
                     getDaysDiff={getDaysDiff}
                     getPriorityColor={getPriorityColor}
                     getPriorityLabel={getPriorityLabel}
@@ -1663,7 +1663,7 @@ function TaskCard({
   onDelete,
   onEdit,
   onOpenDetails,
-  userRole,
+  isOwner,
   getDaysDiff,
   getPriorityColor,
   getPriorityLabel
@@ -1673,7 +1673,7 @@ function TaskCard({
   onDelete: (id: number, title: string) => void
   onEdit: (task: Task) => void
   onOpenDetails: (task: Task) => void
-  userRole: string
+  isOwner: boolean
   getDaysDiff: (date: string | null) => number | null
   getPriorityColor: (priority: number) => string
   getPriorityLabel: (priority: number) => string
@@ -1696,7 +1696,7 @@ function TaskCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {(userRole === 'owner' || userRole === 'admin') && (
+              {isOwner && (
                 <DropdownMenuItem onClick={() => onEdit(task)}>
                   Edit Task
                 </DropdownMenuItem>
@@ -1710,13 +1710,15 @@ function TaskCard({
               <DropdownMenuItem onClick={() => onStatusChange(task.task_id, 2)}>
                 Move to Done
               </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => onDelete(task.task_id, task.title)}
-                className="text-destructive"
-              >
-                <Trash2 className="mr-2 size-3" />
-                Delete
-              </DropdownMenuItem>
+              {isOwner && (
+                <DropdownMenuItem 
+                  onClick={() => onDelete(task.task_id, task.title)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="mr-2 size-3" />
+                  Delete
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
