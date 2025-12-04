@@ -56,8 +56,10 @@ export const API_ENDPOINTS = {
   // Tasks endpoints (protected - requires JWT)
   TASKS: {
     GET_BY_PROJECT: '/tasks',                                // GET /tasks?project_id=X
-    CREATE: '/tasks/task/create',                            // POST - { title, project_id, assigned_user_id?, due_date?, priority?, description?, status? }
+    CREATE: '/tasks/task/create',                            // POST - { title, project_id, assigned_user_ids?, due_date?, priority?, description?, status? }
     UPDATE_STATUS: (taskId: string | number) => `/tasks/task/update/${taskId}`, // PUT - { status }
+    UPDATE: (taskId: string | number) => `/tasks/task/edit/${taskId}`,          // PUT - { title?, description?, due_date?, priority?, assigned_user_ids? }
+    UPDATE_ASSIGNEES: (taskId: string | number) => `/tasks/task/assignees/${taskId}`, // PUT - { assigned_user_ids: number[] }
     DELETE: (taskId: string | number) => `/tasks/task/delete/${taskId}`,        // DELETE - any team member can delete
   },
   // Comments endpoints (protected - requires JWT)
