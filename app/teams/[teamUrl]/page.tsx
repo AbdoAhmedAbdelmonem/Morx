@@ -42,6 +42,11 @@ export default function TeamDetailPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [deleteConfirmChecked, setDeleteConfirmChecked] = useState(false)
 
+  // Delete team state
+  const [isDeleteTeamDialogOpen, setIsDeleteTeamDialogOpen] = useState(false)
+  const [deleteTeamConfirmText, setDeleteTeamConfirmText] = useState("")
+  const [deleteTeamCheckbox, setDeleteTeamCheckbox] = useState(false)
+
   useEffect(() => {
     const storedSession = localStorage.getItem('student_session')
     if (storedSession) {
@@ -245,6 +250,37 @@ export default function TeamDetailPage() {
     }
   }
 
+  const handleDeleteTeam = () => {
+    if (!team || !user?.user_id) return
+    setDeleteTeamConfirmText("")
+    setDeleteTeamCheckbox(false)
+    setIsDeleteTeamDialogOpen(true)
+  }
+
+  const confirmDeleteTeam = async () => {
+    if (!team || !user?.user_id) return
+    if (deleteTeamConfirmText !== "delete team" || !deleteTeamCheckbox) return
+
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.TEAMS.DELETE(team.team_id)}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+
+      const result = await res.json()
+
+      if (res.ok) {
+        setIsDeleteTeamDialogOpen(false)
+        router.push('/teams') // Redirect to teams list
+      } else {
+        alert(result.error || 'Failed to delete team')
+      }
+    } catch (error) {
+      console.error('Error deleting team:', error)
+      alert('An error occurred. Please try again.')
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -386,6 +422,19 @@ export default function TeamDetailPage() {
                   <Users className="mr-1.5 sm:mr-2 size-3.5 sm:size-4" />
                   <span className="hidden sm:inline">Members</span>
                 </Button>
+
+                {/* Delete Team Button - admin only */}
+                {isOwnerOrAdmin && (
+                  <Button
+                    variant="outline"
+                    onClick={handleDeleteTeam}
+                    className="h-9 text-xs sm:text-sm flex-1 lg:flex-none text-red-600 hover:text-red-700 hover:bg-red-50"
+                    size="sm"
+                  >
+                    <Trash2 className="mr-1.5 sm:mr-2 size-3.5 sm:size-4" />
+                    <span className="hidden sm:inline">Delete Team</span>
+                  </Button>
+                )}
                 
                 {/* Create Project Button - admin only */}
                 {isOwnerOrAdmin && (
@@ -775,6 +824,88 @@ export default function TeamDetailPage() {
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Project Permanently
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete Team Confirmation Dialog */}
+          <Dialog open={isDeleteTeamDialogOpen} onOpenChange={setIsDeleteTeamDialogOpen}>
+            <DialogContent className="sm:max-w-[500px] mx-4 sm:mx-0">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-red-600 text-lg sm:text-xl">
+                  <AlertTriangle className="size-5" />
+                  Delete Team
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  Are you sure you want to delete <span className="font-semibold">"{team?.team_name}"</span>? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="py-4">
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription className="text-xs sm:text-sm">
+                    This will permanently delete the team, all projects ({projects.length}), all tasks, comments, and files associated with this team.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="delete-team-confirm" className="text-sm font-medium">
+                      Type <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs sm:text-sm">delete team</span> to confirm:
+                    </Label>
+                    <Input
+                      id="delete-team-confirm"
+                      placeholder="delete team"
+                      value={deleteTeamConfirmText}
+                      onChange={(e) => setDeleteTeamConfirmText(e.target.value)}
+                      className="font-mono h-10 text-sm"
+                    />
+                  </div>
+
+                  <div className="flex items-start space-x-3 rounded-lg border p-3 sm:p-4">
+                    <Checkbox
+                      id="delete-team-checkbox"
+                      checked={deleteTeamCheckbox}
+                      onCheckedChange={(checked) => setDeleteTeamCheckbox(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="space-y-1 leading-none flex-1 min-w-0">
+                      <Label
+                        htmlFor="delete-team-checkbox"
+                        className="text-xs sm:text-sm font-medium cursor-pointer"
+                      >
+                        I understand this action is permanent and cannot be undone
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        All team data, projects, tasks, and files will be permanently deleted
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsDeleteTeamDialogOpen(false)
+                    setDeleteTeamConfirmText("")
+                    setDeleteTeamCheckbox(false)
+                  }}
+                  className="w-full sm:w-auto h-10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={confirmDeleteTeam}
+                  disabled={deleteTeamConfirmText !== "delete team" || !deleteTeamCheckbox}
+                  className="w-full sm:w-auto h-10"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Team Permanently
                 </Button>
               </DialogFooter>
             </DialogContent>
