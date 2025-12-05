@@ -199,6 +199,9 @@ export function Header() {
           <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
             {mounted && theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
           </Button>
+          {isAuthenticated && user && (
+            <NotificationPanel userId={user.user_id} />
+          )}
           <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
             <span className="sr-only">Toggle menu</span>
