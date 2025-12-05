@@ -147,9 +147,11 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.profile_image || (mounted && theme === "dark" ? "/Morx.png" : "/Morx-dark.png")} alt={user.first_name} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user.first_name?.substring(0, 1)}{user.last_name?.substring(0, 1)}
+                    {user.profile_image ? (
+                      <AvatarImage src={user.profile_image} alt={user.first_name} />
+                    ) : null}
+                    <AvatarFallback className="bg-primary text-primary-foreground font-medium">
+                      {user.first_name?.charAt(0).toUpperCase()}{user.last_name?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
