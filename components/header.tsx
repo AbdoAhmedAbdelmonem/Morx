@@ -99,7 +99,7 @@ export function Header() {
     >
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2 font-bold">
-          <Image src="/Morx.png" alt="Morx" width={40} height={40} className="size-10" />
+          <Image src={mounted && theme === "dark" ? "/Morx.png" : "/Morx-dark.png"} alt="Morx" width={40} height={40} className="size-10" />
           <span className="text-xl rock-salt">Morx</span>
         </Link>
         
@@ -147,7 +147,7 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.profile_image || "/Morx.png"} alt={user.first_name} />
+                    <AvatarImage src={user.profile_image || (mounted && theme === "dark" ? "/Morx.png" : "/Morx-dark.png")} alt={user.first_name} />
                     <AvatarFallback className="bg-primary text-primary-foreground">
                       {user.first_name?.substring(0, 1)}{user.last_name?.substring(0, 1)}
                     </AvatarFallback>
