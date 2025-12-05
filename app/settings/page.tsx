@@ -325,11 +325,9 @@ export default function SettingsPage() {
                     <Avatar className="size-20">
                       {profile.profileImage ? (
                         <AvatarImage src={profile.profileImage} alt={profile.firstName} />
-                      ) : (
-                        <AvatarImage src="/Morx.png" />
-                      )}
-                      <AvatarFallback className="text-lg">
-                        {profile.firstName?.substring(0, 1)}{profile.lastName?.substring(0, 1)}
+                      ) : null}
+                      <AvatarFallback className="text-lg bg-primary text-primary-foreground font-medium">
+                        {profile.firstName?.charAt(0).toUpperCase()}{profile.lastName?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-2">
