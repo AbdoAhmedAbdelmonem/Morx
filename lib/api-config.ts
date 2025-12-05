@@ -42,7 +42,7 @@ export const API_ENDPOINTS = {
     DELETE: (teamId: string | number) => `/teams/${teamId}`,         // DELETE
     ADD_MEMBER: (teamId: string | number) => `/teams/${teamId}/members`,              // POST - { email, role }
     REMOVE_MEMBER: (teamId: string | number, userId: string | number) => `/teams/${teamId}/members/${userId}`, // DELETE
-    LEAVE_TEAM: (teamId: string | number, userId: string | number) => `/teams/${teamId}/members/${userId}`,    // POST
+    LEAVE: (teamId: string | number) => `/teams/${teamId}/leave`,    // POST - leave team
   },
   // Projects endpoints (protected - requires JWT)
   PROJECTS: {
