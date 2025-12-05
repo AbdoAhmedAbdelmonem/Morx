@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Users, Folder, MoreVertical, Trash2, ArrowLeft, Settings, BarChart3, AlertTriangle } from "lucide-react"
+import { Plus, Users, Folder, MoreVertical, Trash2, ArrowLeft, Settings, BarChart3, AlertTriangle, LogOut } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -46,6 +46,9 @@ export default function TeamDetailPage() {
   const [isDeleteTeamDialogOpen, setIsDeleteTeamDialogOpen] = useState(false)
   const [deleteTeamConfirmText, setDeleteTeamConfirmText] = useState("")
   const [deleteTeamCheckbox, setDeleteTeamCheckbox] = useState(false)
+
+  // Leave team state
+  const [isLeaveTeamDialogOpen, setIsLeaveTeamDialogOpen] = useState(false)
 
   useEffect(() => {
     const storedSession = localStorage.getItem('student_session')
@@ -281,6 +284,29 @@ export default function TeamDetailPage() {
     }
   }
 
+  const handleLeaveTeam = async () => {
+    if (!team || !user?.user_id) return
+
+    try {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.TEAMS.LEAVE(team.team_id)}`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+      })
+
+      const result = await res.json()
+
+      if (res.ok) {
+        setIsLeaveTeamDialogOpen(false)
+        router.push('/teams') // Redirect to teams list
+      } else {
+        alert(result.error || 'Failed to leave team')
+      }
+    } catch (error) {
+      console.error('Error leaving team:', error)
+      alert('An error occurred. Please try again.')
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen flex-col">
@@ -422,6 +448,19 @@ export default function TeamDetailPage() {
                   <Users className="mr-1.5 sm:mr-2 size-3.5 sm:size-4" />
                   <span className="hidden sm:inline">Members</span>
                 </Button>
+
+                {/* Leave Team Button - visible to non-owners only */}
+                {team.role !== 'owner' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsLeaveTeamDialogOpen(true)}
+                    className="h-9 text-xs sm:text-sm flex-1 lg:flex-none text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                    size="sm"
+                  >
+                    <LogOut className="mr-1.5 sm:mr-2 size-3.5 sm:size-4" />
+                    <span className="hidden sm:inline">Leave Team</span>
+                  </Button>
+                )}
 
                 {/* Delete Team Button - admin only */}
                 {isOwnerOrAdmin && (
@@ -906,6 +945,48 @@ export default function TeamDetailPage() {
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Team Permanently
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Leave Team Confirmation Dialog */}
+          <Dialog open={isLeaveTeamDialogOpen} onOpenChange={setIsLeaveTeamDialogOpen}>
+            <DialogContent className="sm:max-w-[400px] mx-4 sm:mx-0">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-orange-600 text-lg sm:text-xl">
+                  <LogOut className="size-5" />
+                  Leave Team
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  Are you sure you want to leave <span className="font-semibold">"{team?.team_name}"</span>?
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="py-4">
+                <Alert className="mb-4 border-orange-200 bg-orange-50 text-orange-800">
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                  <AlertDescription className="text-xs sm:text-sm">
+                    You will lose access to all projects and tasks in this team. You can rejoin if the team owner invites you again.
+                  </AlertDescription>
+                </Alert>
+              </div>
+
+              <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsLeaveTeamDialogOpen(false)}
+                  className="w-full sm:w-auto h-10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={handleLeaveTeam}
+                  className="w-full sm:w-auto h-10 bg-orange-600 hover:bg-orange-700"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Leave Team
                 </Button>
               </DialogFooter>
             </DialogContent>
