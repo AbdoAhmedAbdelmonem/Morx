@@ -1,13 +1,13 @@
 import type React from "react"
 import "./globals.css"
-import { Inter } from "next/font/google"
+import { Rubik } from "next/font/google"
 import type { Metadata } from "next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ColorThemeProvider } from "@/components/color-theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { GoogleOAuthWrapper } from "@/components/google-oauth-wrapper"
 
-const inter = Inter({ subsets: ["latin"] })
+const rubik = Rubik({ subsets: ["latin", "arabic"] })
 
 export const metadata: Metadata = {
   title: "Morx - Reports and Statistics",
@@ -28,7 +28,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Rock+Salt&display=swap" rel="stylesheet" />
       </head>
-      <body className={inter.className}>
+      <body className={rubik.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <ColorThemeProvider defaultTheme="mint">
             <GoogleOAuthWrapper>
