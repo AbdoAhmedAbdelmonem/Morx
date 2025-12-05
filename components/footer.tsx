@@ -1,14 +1,25 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 export function Footer() {
+  const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
     <footer className="w-full border-t bg-background/95 backdrop-blur-sm">
       <div className="container flex flex-col gap-8 px-4 py-10 md:px-6 lg:py-16">
         <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
           <div className="space-y-4">
             <div className="flex items-center gap-2 font-bold">
-              <Image src="/Morx.png" alt="Morx" width={32} height={32} className="size-8" />
+              <Image src={mounted && theme === "dark" ? "/Morx.png" : "/Morx-dark.png"} alt="Morx" width={32} height={32} className="size-8" />
               <span className="rock-salt">Morx</span>
             </div>
             <p className="text-sm text-muted-foreground">
