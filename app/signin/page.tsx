@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { CredentialResponse } from '@react-oauth/google'
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,10 +17,16 @@ import { API_BASE_URL, API_ENDPOINTS } from "@/lib/api-config"
 
 export default function SignInPage() {
   const router = useRouter()
+  const { theme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Handle successful Google login
   const handleGoogleSuccess = async (credentialResponse: any) => {
@@ -116,7 +123,7 @@ export default function SignInPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1 flex flex-col items-center">
             <Link href="/" className="mb-2">
-              <Image src="/Morx.png" alt="Morx" width={60} height={60} className="size-15" />
+              <Image src={mounted && theme === "dark" ? "/Morx.png" : "/Morx-dark.png"} alt="Morx" width={60} height={60} className="size-15" />
             </Link>
             <CardTitle className="text-2xl font-bold text-center rock-salt">
               Welcome to Morx
