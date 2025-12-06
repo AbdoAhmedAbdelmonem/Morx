@@ -15,13 +15,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, ArrowLeft, MoreVertical, Trash2, Calendar, User, AlertCircle, CheckCircle2, Clock, Settings, Edit, MessageSquare, Paperclip, Send, X, Download, Heart, ChevronDown, Check } from "lucide-react"
+import { Plus, ArrowLeft, MoreVertical, Trash2, Calendar, User, AlertCircle, CheckCircle2, Clock, Settings, Edit, MessageSquare, Paperclip, Send, X, Download, Heart, ChevronDown, Check, LayoutGrid, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Checkbox } from "@/components/ui/checkbox"
-import { API_BASE_URL, API_ENDPOINTS, getAuthHeaders } from "@/lib/api-config"
+import { API_BASE_URL, API_ENDPOINTS, getAuthHeaders, getApiUrl } from "@/lib/api-config"
 
 interface Task {
   task_id: number
@@ -99,6 +99,13 @@ export default function ProjectPage() {
   const [taskToDelete, setTaskToDelete] = useState<{ id: number; title: string } | null>(null)
   const [deleteTaskConfirmText, setDeleteTaskConfirmText] = useState("")
   const [deleteTaskCheckbox, setDeleteTaskCheckbox] = useState(false)
+
+  // View mode state (kanban or calendar)
+  const [viewMode, setViewMode] = useState<'kanban' | 'calendar'>('kanban')
+  const [calendarDate, setCalendarDate] = useState(new Date())
+  
+  // Day tasks popup state
+  const [dayTasksPopup, setDayTasksPopup] = useState<{ date: Date; tasks: Task[] } | null>(null)
 
   useEffect(() => {
     const storedSession = localStorage.getItem('student_session')
@@ -532,20 +539,16 @@ export default function ProjectPage() {
     if (!user?.user_id) return
     
     try {
-      const res = await fetch('/api/tasks/comments/like', {
+      const res = await fetch(getApiUrl(`comments/like/${commentId}`), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          comment_id: commentId,
-          user_id: user.user_id
-        })
+        headers: getAuthHeaders()
       })
       
       const result = await res.json()
-      if (result.success) {
+      if (res.ok) {
         setComments(prev => prev.map(c => 
           c.comment_id === commentId 
-            ? { ...c, likes: result.data.likes }
+            ? { ...c, likes: result.likes, liked_by_me: result.liked }
             : c
         ))
       }
@@ -738,18 +741,40 @@ export default function ProjectPage() {
                 <p className="text-sm text-muted-foreground">{project.team_name} · {tasks.length} tasks</p>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
+                {/* View Mode Toggle */}
+                <div className="flex items-center border rounded-lg p-0.5 md:p-1">
+                  <Button
+                    variant={viewMode === 'kanban' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-7 md:h-8 px-2 md:px-3"
+                    onClick={() => setViewMode('kanban')}
+                  >
+                    <LayoutGrid className="size-4" />
+                    <span className="hidden sm:inline ml-1">Board</span>
+                  </Button>
+                  <Button
+                    variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="h-7 md:h-8 px-2 md:px-3"
+                    onClick={() => setViewMode('calendar')}
+                  >
+                    <CalendarDays className="size-4" />
+                    <span className="hidden sm:inline ml-1">Calendar</span>
+                  </Button>
+                </div>
+
                 {(project.role === 'owner' || project.role === 'admin') && (
-                  <Button variant="outline" size="icon" onClick={handleEditProject}>
+                  <Button variant="outline" size="icon" className="size-8 md:size-9" onClick={handleEditProject}>
                     <Edit className="size-4" />
                   </Button>
                 )}
                 
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 size-4" />
-                    New Task
+                  <Button size="sm" className="h-8 md:h-9 px-2 md:px-4">
+                    <Plus className="size-4" />
+                    <span className="hidden sm:inline ml-1">New Task</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
@@ -1563,98 +1588,197 @@ export default function ProjectPage() {
             </DialogContent>
           </Dialog>
 
-          {/* Kanban Board */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            {/* To Do Column */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="size-2 rounded-full bg-gray-500"></div>
-                <h3 className="font-semibold">To Do</h3>
-                <Badge variant="secondary" className="ml-auto">{todoTasks.length}</Badge>
-              </div>
+          {/* View Mode: Kanban or Calendar */}
+          {viewMode === 'kanban' ? (
+            /* Kanban Board */
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              {/* To Do Column */}
               <div className="space-y-3">
-                {todoTasks.map((task) => (
-                  <TaskCard
-                    key={task.task_id}
-                    task={task}
-                    onStatusChange={handleUpdateTaskStatus}
-                    onDelete={handleDeleteTask}
-                    onEdit={handleEditTask}
-                    onOpenDetails={openTaskDetails}
-                    isOwner={user?.user_id === project?.team_owner_id}
-                    getDaysDiff={getDaysDiff}
-                    getPriorityColor={getPriorityColor}
-                    getPriorityLabel={getPriorityLabel}
-                  />
-                ))}
-                {todoTasks.length === 0 && (
-                  <div className="text-center py-8 text-sm text-muted-foreground">
-                    No tasks
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-gray-500"></div>
+                  <h3 className="font-semibold">To Do</h3>
+                  <Badge variant="secondary" className="ml-auto">{todoTasks.length}</Badge>
+                </div>
+                <div className="space-y-3">
+                  {todoTasks.map((task) => (
+                    <TaskCard
+                      key={task.task_id}
+                      task={task}
+                      onStatusChange={handleUpdateTaskStatus}
+                      onDelete={handleDeleteTask}
+                      onEdit={handleEditTask}
+                      onOpenDetails={openTaskDetails}
+                      isOwner={user?.user_id === project?.team_owner_id}
+                      getDaysDiff={getDaysDiff}
+                      getPriorityColor={getPriorityColor}
+                      getPriorityLabel={getPriorityLabel}
+                    />
+                  ))}
+                  {todoTasks.length === 0 && (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      No tasks
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* In Progress Column */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="size-2 rounded-full bg-blue-500"></div>
-                <h3 className="font-semibold">In Progress</h3>
-                <Badge variant="secondary" className="ml-auto">{inProgressTasks.length}</Badge>
-              </div>
+              {/* In Progress Column */}
               <div className="space-y-3">
-                {inProgressTasks.map((task) => (
-                  <TaskCard
-                    key={task.task_id}
-                    task={task}
-                    onStatusChange={handleUpdateTaskStatus}
-                    onDelete={handleDeleteTask}
-                    onEdit={handleEditTask}
-                    onOpenDetails={openTaskDetails}
-                    isOwner={user?.user_id === project?.team_owner_id}
-                    getDaysDiff={getDaysDiff}
-                    getPriorityColor={getPriorityColor}
-                    getPriorityLabel={getPriorityLabel}
-                  />
-                ))}
-                {inProgressTasks.length === 0 && (
-                  <div className="text-center py-8 text-sm text-muted-foreground">
-                    No tasks
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-blue-500"></div>
+                  <h3 className="font-semibold">In Progress</h3>
+                  <Badge variant="secondary" className="ml-auto">{inProgressTasks.length}</Badge>
+                </div>
+                <div className="space-y-3">
+                  {inProgressTasks.map((task) => (
+                    <TaskCard
+                      key={task.task_id}
+                      task={task}
+                      onStatusChange={handleUpdateTaskStatus}
+                      onDelete={handleDeleteTask}
+                      onEdit={handleEditTask}
+                      onOpenDetails={openTaskDetails}
+                      isOwner={user?.user_id === project?.team_owner_id}
+                      getDaysDiff={getDaysDiff}
+                      getPriorityColor={getPriorityColor}
+                      getPriorityLabel={getPriorityLabel}
+                    />
+                  ))}
+                  {inProgressTasks.length === 0 && (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      No tasks
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Done Column */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="size-2 rounded-full bg-green-500"></div>
-                <h3 className="font-semibold">Done</h3>
-                <Badge variant="secondary" className="ml-auto">{doneTasks.length}</Badge>
-              </div>
+              {/* Done Column */}
               <div className="space-y-3">
-                {doneTasks.map((task) => (
-                  <TaskCard
-                    key={task.task_id}
-                    task={task}
-                    onStatusChange={handleUpdateTaskStatus}
-                    onDelete={handleDeleteTask}
-                    onEdit={handleEditTask}
-                    onOpenDetails={openTaskDetails}
-                    isOwner={user?.user_id === project?.team_owner_id}
-                    getDaysDiff={getDaysDiff}
-                    getPriorityColor={getPriorityColor}
-                    getPriorityLabel={getPriorityLabel}
-                  />
-                ))}
-                {doneTasks.length === 0 && (
-                  <div className="text-center py-8 text-sm text-muted-foreground">
-                    No tasks
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <div className="size-2 rounded-full bg-green-500"></div>
+                  <h3 className="font-semibold">Done</h3>
+                  <Badge variant="secondary" className="ml-auto">{doneTasks.length}</Badge>
+                </div>
+                <div className="space-y-3">
+                  {doneTasks.map((task) => (
+                    <TaskCard
+                      key={task.task_id}
+                      task={task}
+                      onStatusChange={handleUpdateTaskStatus}
+                      onDelete={handleDeleteTask}
+                      onEdit={handleEditTask}
+                      onOpenDetails={openTaskDetails}
+                      isOwner={user?.user_id === project?.team_owner_id}
+                      getDaysDiff={getDaysDiff}
+                      getPriorityColor={getPriorityColor}
+                      getPriorityLabel={getPriorityLabel}
+                    />
+                  ))}
+                  {doneTasks.length === 0 && (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      No tasks
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            /* Calendar View */
+            <CalendarView
+              tasks={tasks}
+              currentDate={calendarDate}
+              onDateChange={setCalendarDate}
+              onTaskClick={openTaskDetails}
+              onShowDayTasks={(date, dayTasks) => setDayTasksPopup({ date, tasks: dayTasks })}
+              getPriorityColor={getPriorityColor}
+              getPriorityLabel={getPriorityLabel}
+            />
+          )}
+
+          {/* Day Tasks Popup Dialog */}
+          <Dialog open={!!dayTasksPopup} onOpenChange={() => setDayTasksPopup(null)}>
+            <DialogContent className="max-w-md max-h-[80vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CalendarDays className="size-5" />
+                  Tasks for {dayTasksPopup?.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </DialogTitle>
+                <DialogDescription>
+                  {dayTasksPopup?.tasks.length} task{dayTasksPopup?.tasks.length !== 1 ? 's' : ''} on this day
+                </DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="max-h-[50vh] pr-4">
+                <div className="space-y-2">
+                  {dayTasksPopup?.tasks.map(task => (
+                    <div
+                      key={task.task_id}
+                      onClick={() => {
+                        setDayTasksPopup(null)
+                        openTaskDetails(task)
+                      }}
+                      className={cn(
+                        "p-3 rounded-lg cursor-pointer hover:shadow-md transition-all",
+                        "bg-card border border-border hover:border-primary/50",
+                        "border-l-4",
+                        task.priority === 3 && "border-l-red-500",
+                        task.priority === 2 && "border-l-yellow-500",
+                        task.priority === 1 && "border-l-green-500"
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={cn(
+                          "size-3 rounded-full mt-1 flex-shrink-0",
+                          task.status === 0 && "bg-gray-500",
+                          task.status === 1 && "bg-blue-500",
+                          task.status === 2 && "bg-green-500"
+                        )} />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate">{task.title}</h4>
+                          {task.description && (
+                            <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{task.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline" className={cn(
+                              "text-[10px] h-5",
+                              task.priority === 3 && "bg-red-100 text-red-700 border-red-200",
+                              task.priority === 2 && "bg-yellow-100 text-yellow-700 border-yellow-200",
+                              task.priority === 1 && "bg-green-100 text-green-700 border-green-200"
+                            )}>
+                              {task.priority === 3 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px] h-5">
+                              {task.status === 0 ? 'To Do' : task.status === 1 ? 'In Progress' : 'Done'}
+                            </Badge>
+                          </div>
+                          {task.assigned_users && (
+                            <div className="flex items-center gap-1 mt-2">
+                              {task.assigned_users.split('||').slice(0, 3).map((assignee, idx) => {
+                                const [, ...nameParts] = assignee.split(':')
+                                const name = nameParts.join(':')
+                                return (
+                                  <Avatar key={idx} className="size-5 border-2 border-background">
+                                    <AvatarFallback className="text-[9px] bg-primary/10">
+                                      {name.split(' ').map(n => n[0]).join('')}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                )
+                              })}
+                              {task.assigned_users.split('||').length > 3 && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  +{task.assigned_users.split('||').length - 3}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <ChevronRight className="size-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
       <Footer />
@@ -1798,3 +1922,299 @@ function TaskCard({
   )
 }
 
+// Calendar View Component
+function CalendarView({
+  tasks,
+  currentDate,
+  onDateChange,
+  onTaskClick,
+  onShowDayTasks,
+  getPriorityColor,
+  getPriorityLabel
+}: {
+  tasks: Task[]
+  currentDate: Date
+  onDateChange: (date: Date) => void
+  onTaskClick: (task: Task) => void
+  onShowDayTasks: (date: Date, tasks: Task[]) => void
+  getPriorityColor: (priority: number) => string
+  getPriorityLabel: (priority: number) => string
+}) {
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
+  
+  // Get first day of month and total days
+  const firstDayOfMonth = new Date(year, month, 1)
+  const lastDayOfMonth = new Date(year, month + 1, 0)
+  const daysInMonth = lastDayOfMonth.getDate()
+  const startingDayOfWeek = firstDayOfMonth.getDay()
+  
+  // Get days from previous month to fill the first week
+  const prevMonthDays = new Date(year, month, 0).getDate()
+  
+  // Generate calendar days
+  const calendarDays: { date: Date; isCurrentMonth: boolean }[] = []
+  
+  // Previous month days
+  for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+    calendarDays.push({
+      date: new Date(year, month - 1, prevMonthDays - i),
+      isCurrentMonth: false
+    })
+  }
+  
+  // Current month days
+  for (let i = 1; i <= daysInMonth; i++) {
+    calendarDays.push({
+      date: new Date(year, month, i),
+      isCurrentMonth: true
+    })
+  }
+  
+  // Next month days to complete the grid (6 weeks)
+  const remainingDays = 42 - calendarDays.length
+  for (let i = 1; i <= remainingDays; i++) {
+    calendarDays.push({
+      date: new Date(year, month + 1, i),
+      isCurrentMonth: false
+    })
+  }
+  
+  // Get tasks for a specific date
+  const getTasksForDate = (date: Date) => {
+    return tasks.filter(task => {
+      if (!task.due_date) return false
+      const taskDate = new Date(task.due_date)
+      return (
+        taskDate.getFullYear() === date.getFullYear() &&
+        taskDate.getMonth() === date.getMonth() &&
+        taskDate.getDate() === date.getDate()
+      )
+    })
+  }
+  
+  const isToday = (date: Date) => {
+    const today = new Date()
+    return (
+      date.getFullYear() === today.getFullYear() &&
+      date.getMonth() === today.getMonth() &&
+      date.getDate() === today.getDate()
+    )
+  }
+  
+  const goToPreviousMonth = () => {
+    onDateChange(new Date(year, month - 1, 1))
+  }
+  
+  const goToNextMonth = () => {
+    onDateChange(new Date(year, month + 1, 1))
+  }
+  
+  const goToToday = () => {
+    onDateChange(new Date())
+  }
+  
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+  
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const dayNamesShort = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+  
+  const getStatusColor = (status: number) => {
+    switch (status) {
+      case 0: return 'bg-gray-500'
+      case 1: return 'bg-blue-500'
+      case 2: return 'bg-green-500'
+      default: return 'bg-gray-500'
+    }
+  }
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="pb-3 md:pb-4 border-b px-3 md:px-6">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 md:gap-4">
+            <CardTitle className="text-lg md:text-2xl font-bold">
+              {monthNames[month].slice(0, 3)}<span className="hidden sm:inline">{monthNames[month].slice(3)}</span> {year}
+            </CardTitle>
+            <Button variant="outline" size="sm" onClick={goToToday} className="hidden sm:flex">
+              Today
+            </Button>
+          </div>
+          <div className="flex items-center gap-1 md:gap-2">
+            <Button variant="outline" size="sm" onClick={goToToday} className="sm:hidden text-xs px-2">
+              Today
+            </Button>
+            <Button variant="outline" size="icon" className="size-8 md:size-9" onClick={goToPreviousMonth}>
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="size-8 md:size-9" onClick={goToNextMonth}>
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        {/* Day headers */}
+        <div className="grid grid-cols-7 border-b bg-muted/30">
+          {dayNames.map((day, idx) => (
+            <div key={day} className="text-center text-xs md:text-sm font-semibold text-muted-foreground py-2 md:py-3 border-r last:border-r-0">
+              <span className="hidden sm:inline">{day}</span>
+              <span className="sm:hidden">{dayNamesShort[idx]}</span>
+            </div>
+          ))}
+        </div>
+        
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7">
+          {calendarDays.map((day, index) => {
+            const dayTasks = getTasksForDate(day.date)
+            const hasTasksToShow = dayTasks.length > 0
+            
+            return (
+              <div
+                key={index}
+                className={cn(
+                  "min-h-[80px] md:min-h-[140px] p-1 md:p-3 border-r border-b [&:nth-child(7n)]:border-r-0",
+                  !day.isCurrentMonth && "bg-muted/30",
+                  isToday(day.date) && "bg-primary/10 ring-2 ring-primary ring-inset"
+                )}
+              >
+                <div className={cn(
+                  "text-xs md:text-sm font-semibold mb-1 md:mb-2 flex items-center justify-center size-5 md:size-7 rounded-full mx-auto",
+                  !day.isCurrentMonth && "text-muted-foreground",
+                  isToday(day.date) && "bg-primary text-primary-foreground"
+                )}>
+                  {day.date.getDate()}
+                </div>
+                
+                {/* Mobile: Show dots only */}
+                <div 
+                  className="flex flex-wrap justify-center gap-0.5 sm:hidden cursor-pointer"
+                  onClick={() => hasTasksToShow && onShowDayTasks(day.date, dayTasks)}
+                >
+                  {dayTasks.slice(0, 4).map(task => (
+                    <div
+                      key={task.task_id}
+                      className={cn(
+                        "size-2 rounded-full",
+                        getStatusColor(task.status)
+                      )}
+                    />
+                  ))}
+                  {dayTasks.length > 4 && (
+                    <span className="text-[8px] text-muted-foreground">+{dayTasks.length - 4}</span>
+                  )}
+                </div>
+
+                {/* Desktop: Show full task cards */}
+                <div className="hidden sm:block space-y-1.5">
+                  {dayTasks.slice(0, 3).map(task => (
+                    <div
+                      key={task.task_id}
+                      onClick={() => onTaskClick(task)}
+                      className={cn(
+                        "text-xs p-2 rounded-md cursor-pointer hover:opacity-80 hover:shadow-md transition-all",
+                        "bg-card shadow-sm border-l-2",
+                        task.priority === 3 && "border-l-red-500",
+                        task.priority === 2 && "border-l-yellow-500",
+                        task.priority === 1 && "border-l-green-500"
+                      )}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <div className={cn("size-2 rounded-full flex-shrink-0", getStatusColor(task.status))} />
+                        <span className="truncate font-medium leading-tight">{task.title}</span>
+                      </div>
+                      {task.assigned_users && (
+                        <div className="flex items-center gap-1 mt-1.5">
+                          {task.assigned_users.split('||').slice(0, 2).map((assignee, idx) => {
+                            const [, ...nameParts] = assignee.split(':')
+                            const name = nameParts.join(':')
+                            return (
+                              <Avatar key={idx} className="size-5 border-2 border-background">
+                                <AvatarFallback className="text-[9px] bg-primary/10">
+                                  {name.split(' ').map(n => n[0]).join('')}
+                                </AvatarFallback>
+                              </Avatar>
+                            )
+                          })}
+                          {task.assigned_users.split('||').length > 2 && (
+                            <span className="text-[10px] text-muted-foreground ml-1">
+                              +{task.assigned_users.split('||').length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {dayTasks.length > 3 && (
+                    <button 
+                      className="text-[11px] text-primary font-medium text-center py-1 w-full hover:underline"
+                      onClick={() => onShowDayTasks(day.date, dayTasks)}
+                    >
+                      +{dayTasks.length - 3} more tasks
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        
+        {/* Legend - Hidden on mobile, shown on tablet+ */}
+        <div className="hidden sm:flex flex-wrap items-center gap-4 md:gap-6 p-3 md:p-4 border-t bg-muted/20">
+          <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
+            <span className="font-semibold text-foreground">Status:</span>
+            <div className="flex items-center gap-1">
+              <div className="size-2 md:size-2.5 rounded-full bg-gray-500" />
+              <span className="text-muted-foreground">To Do</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="size-2 md:size-2.5 rounded-full bg-blue-500" />
+              <span className="text-muted-foreground">In Progress</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="size-2 md:size-2.5 rounded-full bg-green-500" />
+              <span className="text-muted-foreground">Done</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm">
+            <span className="font-semibold text-foreground">Priority:</span>
+            <div className="flex items-center gap-1">
+              <div className="w-1 h-3 md:h-4 rounded-sm bg-green-500" />
+              <span className="text-muted-foreground">Low</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-1 h-3 md:h-4 rounded-sm bg-yellow-500" />
+              <span className="text-muted-foreground">Medium</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-1 h-3 md:h-4 rounded-sm bg-red-500" />
+              <span className="text-muted-foreground">High</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Legend - Compact */}
+        <div className="sm:hidden p-2 border-t bg-muted/20">
+          <div className="flex justify-center gap-3 text-[10px]">
+            <div className="flex items-center gap-1">
+              <div className="size-2 rounded-full bg-gray-500" />
+              <span>Todo</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="size-2 rounded-full bg-blue-500" />
+              <span>Progress</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="size-2 rounded-full bg-green-500" />
+              <span>Done</span>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
